@@ -9,6 +9,8 @@
 #include "common.h"
 #include "config.h"
 #include <math.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 
 int receive_pkt(__attribute__((unused)) void *args) {
 
@@ -21,26 +23,18 @@ int receive_pkt(__attribute__((unused)) void *args) {
     unsigned long int recdTime, sentTime;
     unsigned long int sentTimes[NUM_SAMPLES];
     unsigned long int latency[NUM_SAMPLES];
-    //unsigned long int seqNo[NUM_SAMPLES];
-    unsigned long int seqNo;
+    unsigned long int seqNo[NUM_SAMPLES];
     struct timeval timeval;
-
-    double* y = (double*)malloc(sizeof(double) * 3);
 
     gettimeofday(&timeval, NULL);
     recdTime = timeval.tv_sec * pow(10, 6) + timeval.tv_usec;
-    //sprintf(fileLog, "log-%ld", recdTime);
-    //fLog = fopen(fileLog, "w+");
 
-    //while(RCV_PKT && (sampleIndex < NUM_SAMPLES)) {
+	mkdir("Logging", 0777);
 
-    // Loop until user presses CTRL-C
-    while(RCV_PKT) {
+    sprintf(fileLog, "Logging/log-%ld", recdTime);
+    fLog = fopen(fileLog, "w+");
 
-    	// wait for Trigger from receiver
-    	//while (!TRIGGER_RECEIVER) {
-
-    	//}
+    while(RCV_PKT && (sampleIndex < NUM_SAMPLES)) {
 
     	TRIGGER_RECEIVER = 0;
 
@@ -55,9 +49,19 @@ int receive_pkt(__attribute__((unused)) void *args) {
                     payload_ptr += sizeof(struct vlan_hdr);
                 }
 
-				memcpy(&seqNo, payload_ptr, sizeof(unsigned long int));
+                if (gettimeofday(&timeval, NULL) >= 0) {
 
-				printf("DPDK RECEIVER: RECEIVING Packet nr. %d\n", seqNo);
+                    recdTime = timeval.tv_sec * pow(10, 6) + timeval.tv_usec;
+                    memcpy(&sentTime, payload_ptr, sizeof(unsigned long int));
+                    memcpy(&seqNo[sampleIndex], payload_ptr + sizeof(unsigned long int), sizeof(unsigned long int));
+                    sentTimes[sampleIndex] = sentTime;
+                    latency[sampleIndex] = recdTime - sentTime;
+
+					if (DEBUG)
+						printf("DPDK RECEIVER: RECEIVING Packet nr. %d with latency of %ld\n", seqNo[sampleIndex], latency[sampleIndex]);
+
+                    sampleIndex++;
+                }
 
                 rte_pktmbuf_free(recd_bufs[index]);
             }
@@ -65,9 +69,9 @@ int receive_pkt(__attribute__((unused)) void *args) {
     }
 
     // If logging is needed, write into logfile
-    //for (i = 0; i < sampleIndex; i++)
-    //    fprintf(fLog, "%ld %ld %ld\n", seqNo[i], sentTimes[i], latency[i]);
-    //fclose(fLog);
+    for (i = 0; i < sampleIndex; i++)
+        fprintf(fLog, "%ld %ld %ld\n", seqNo[i], sentTimes[i], latency[i]);
+    fclose(fLog);
 
     SND_PKT = 0;
     PKT_TRIGGER = 0;

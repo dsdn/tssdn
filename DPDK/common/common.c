@@ -56,11 +56,10 @@ void sig_int(int signo)
 
 void sig_timer(int signo)
 {
+	// Reset packet trigger
 	PKT_TRIGGER = 0;
-    if (DEBUG) fprintf(stderr, "Alarm..\n");
 }
 
-/* Local Functions */
 void signal_handler(int sig)
 {
     if (sig == SIGINT) sig_int(sig);

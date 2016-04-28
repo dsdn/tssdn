@@ -24,8 +24,6 @@
 #include <signal.h>
 #include <math.h>
 
-#define DEBUG 0
-
 #define NUM_MBUFS 8000
 #define MBUF_CACHE_SIZE 256
 #define TX_RING_SIZE 512

@@ -101,28 +101,23 @@ int send_pkt(__attribute__((unused)) void *args) {
                 rte_vlan_insert(&send_bufs[index]);
             }
 
-            // Wait for ??????
+            // Wait for Packet Trigger
             while(PKT_TRIGGER & !PRE_WAIT) {
 
             }
 
+            // Send the current time
+            if (gettimeofday(&timeval, NULL) >= 0) {
 
-            // Add to the payload of the packet
-            //if (gettimeofday(&timeval, NULL) >= 0) {
+                sentTime = timeval.tv_sec * pow(10, 6) + timeval.tv_usec;
+                memcpy((char*)(payload_ptr), (void*)&sentTime, sizeof(unsigned long int));
+                memcpy((char*)(payload_ptr + sizeof(unsigned long int)), (void*)&seqNo, sizeof(unsigned long int));
+                seqNo++;
+            } else {
 
-                //sentTime = timeval.tv_sec * pow(10, 6) + timeval.tv_usec;
-                //memcpy((char*)(payload_ptr), (void*)y, 3 * sizeof(double));
-
-           //printf("SENDER PAYLOAD: %p\n",payload_ptr);
-
-           memcpy((char*)(payload_ptr), (void*)&seqNo, sizeof(unsigned long int));
-           seqNo++;
-
-            //} else {
-
-            //    fprintf(stderr, "DPDK SENDER: Error acquiring timestamp - %s\n", strerror(errno));
-            //   	exit(0);
-            //}
+                fprintf(stderr, "Error acquiring timestamp - %s\n", strerror(errno));
+               	exit(0);
+            }
 
         }
 
@@ -132,14 +127,11 @@ int send_pkt(__attribute__((unused)) void *args) {
             for (index = ret; index < TX_BURST_SIZE; index++)
                 rte_pktmbuf_free(send_bufs[index]);
         }
+        
+		if (DEBUG)
+			printf("DPDK SENDER: SENDING Packet nr. %d at time %ld\n", seqNo-1, sentTime);
 
-        if (DEBUG) {
-            printf("%ld\n", sentTime);
-        }
-
-        // Signal receiver that a packet has been sent
-		TRIGGER_RECEIVER = 1;
-		printf("DPDK SENDER: SENDING Packet nr. %d\n", seqNo-1);
+		// Signal receiver that a packet has been sent
         PKT_TRIGGER = 1;
     }
 

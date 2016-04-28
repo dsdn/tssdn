@@ -14,6 +14,9 @@
 #ifndef _DPDK_SIM_CONFIG_H_
 #define _DPDK_SIM_CONFIG_H_
 
+// En-/Disable terminal messages
+#define DEBUG 1
+
 // Period for sending packets
 #define SEND_PERIOD_SEC 	1
 #define SEND_PERIOD_USEC 	100
