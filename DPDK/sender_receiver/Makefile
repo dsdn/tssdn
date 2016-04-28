@@ -45,8 +45,10 @@ APP = sender_receiver
 
 COMMON_DIR =  $(current_dir)/../common
 
+VPATH += $(COMMON_DIR)
+
 # all source are stored in SRCS-y
-SRCS-y := sender_receiver.c $(COMMON_DIR)/sender.c $(COMMON_DIR)/receiver.c $(COMMON_DIR)/common.c
+SRCS-y := sender_receiver.c sender.c receiver.c common.c
 
 INCLUDES := -I$(COMMON_DIR)
 LDLIBS := 
