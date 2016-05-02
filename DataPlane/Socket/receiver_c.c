@@ -9,6 +9,7 @@ Date - 5.07.2015
 /* Include files */
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/time.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <netdb.h>
@@ -19,48 +20,35 @@ Date - 5.07.2015
 #include <math.h>
 #include <errno.h>
 
-#define THROUGHPUT_INTERVAL 10
-
 
 /* Globals */
+#define NUM_SAMPLES 10000
+#define PAYLOAD_SIZE 8
 volatile int recvPkt = 1;
-uint64_t pktCount = 0;
-uint64_t lastRead = 0;
-int recvPkts = 1;
 
 /* Local Functions */
-static void signal_handler(int sig)
-{
-    uint64_t temp;
-    uint64_t pktRecd;
-    if (sig == SIGINT)
-    {
-        recvPkts = 0;
-    }
-    else if (sig == SIGALRM)
-    {
-        temp = pktCount;
-        if (temp < lastRead) {
-            pktRecd = pow(2, 64) + temp - lastRead;
-        } else {
-            pktRecd = temp - lastRead;
-        }
-        float rate = (float) (pktRecd / THROUGHPUT_INTERVAL);
-        printf("Receiving rate in Mpps - %.2f\n", rate / pow(10,6));
-        lastRead = temp;     
-        alarm(THROUGHPUT_INTERVAL); 
+static void signal_handler(int sig) {
+
+    if (sig == SIGINT) {
+
+        recvPkt = 0;
     }
 }
 
 /* Main Function */
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
+
     // Local variables
-    int socketNo, portNo;
+    int socketNo, portNo, sampleIndex = 0, i;
     char *ipAddr;
     struct sockaddr_in self_addr;
-    char buf[64];
-    uint64_t payload;
+    char buf[PAYLOAD_SIZE];
+    char fileLog[32];
+    unsigned long int sentTime, recdTime;
+    unsigned long int sentTimes[NUM_SAMPLES];
+    unsigned long int latency[NUM_SAMPLES];
+    struct timeval timeval;
+    FILE *fLog;
 
     struct sigaction newSigAction;
     memset((void *)&newSigAction, 0, sizeof(struct sigaction));
@@ -88,7 +76,7 @@ int main(int argc, char *argv[])
     self_addr.sin_addr.s_addr = htonl(INADDR_ANY);
     self_addr.sin_port = htons(portNo);
 
-    if (bind(socketNo, (struct sockaddr *)&self_addr, sizeof(struct sockaddr_in)) < 0){
+    if (bind(socketNo, (struct sockaddr *)&self_addr, sizeof(struct sockaddr_in)) < 0) {
         fprintf(stderr, "Error binding socket - %s\n", strerror(errno));
         exit(0);
     }
@@ -98,21 +86,29 @@ int main(int argc, char *argv[])
         fprintf(stderr, "Error attaching signal handler.\n");
         exit(0);
     }
-    if (sigaction(SIGALRM, &newSigAction, NULL) < 0) {
-        fprintf(stderr, "Error attaching signal handler.\n");
-        exit(0);
-    }
 
-    alarm(THROUGHPUT_INTERVAL);
+    // Open a file to log timings
+    gettimeofday(&timeval, NULL);
+    recdTime = timeval.tv_sec * pow(10, 6) + timeval.tv_usec;
+    sprintf(fileLog, "log-%ld", recdTime);
+    fLog = fopen(fileLog, "w+");
 
-    while(recvPkts){
+    while(recvPkt && (sampleIndex < NUM_SAMPLES)){
         //try to receive some data, this is a blocking call
-        if (read(socketNo, buf, 64) > 0)
-        {
-            memcpy(&payload, buf, sizeof(uint64_t)); 
-            pktCount++;      
+        if (read(socketNo, buf, PAYLOAD_SIZE) > 0) {
+
+            if (gettimeofday(&timeval, NULL) >= 0) {
+                recdTime = timeval.tv_sec * pow(10, 6) + timeval.tv_usec;
+                memcpy(&sentTime, buf, sizeof(unsigned long int));
+                sentTimes[sampleIndex] = sentTime;
+                latency[sampleIndex] = recdTime - sentTime;
+                sampleIndex++;
+            }            
         }
     }
+    
+    for (i = 0; i < sampleIndex; i++)
+        fprintf(fLog, "%ld %ld\n", sentTimes[i], latency[i]);
+    fclose(fLog);
 }
-
 

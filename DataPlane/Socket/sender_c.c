@@ -10,6 +10,7 @@ Date - 5.07.2015
 /* Include files */
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/time.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <netdb.h>
@@ -18,36 +19,39 @@ Date - 5.07.2015
 #include <unistd.h>
 #include <signal.h>
 #include <math.h>
+#include <errno.h>
 
-#define THROUGHPUT_INTERVAL 10
+#define SEND_PERIOD_USEC 10000
+#define SEND_PERIOD_SEC 0
+#define PAYLOAD_SIZE 1458
 
 /* Globals */
 volatile int sendPkt = 1;
-uint64_t pl = 0;
-uint64_t lastRead = 0;
-
+int socketNo;
+static char buf[PAYLOAD_SIZE];
 
 /* Local Functions */
 static void signal_handler(int sig)
 {
-    uint64_t temp;
-    uint64_t pktSent;
-    if (sig == SIGINT)
-    {
+    unsigned long int time = 0;
+    struct timeval timeval;
+
+    if (sig == SIGINT) {
         sendPkt = 0;
-    }
-    else if (sig == SIGALRM)
-    {
-        temp = pl;
-        if (temp < lastRead) {
-            pktSent = pow(2, 64) + temp - lastRead;
+
+    } else if (sig == SIGALRM) {
+    
+        // Send the current time 
+        if (gettimeofday(&timeval, NULL) >= 0) {
+
+            time = timeval.tv_sec * pow(10, 6) + timeval.tv_usec;
+            memcpy(buf, (void*)&time, sizeof(unsigned long int));
+            write(socketNo, buf, PAYLOAD_SIZE);
         } else {
-            pktSent = temp - lastRead;
+            
+            fprintf(stderr, "Error acquiring timestamp - %s\n", strerror(errno));
+            exit(0);
         }
-        float rate = (float) (pktSent / THROUGHPUT_INTERVAL);
-        printf("Sending rate in Mpps - %.2f\n", rate / pow(10,6));
-        lastRead = temp;     
-        alarm(THROUGHPUT_INTERVAL); 
     }
 }
 
@@ -55,11 +59,11 @@ static void signal_handler(int sig)
 int main(int argc, char *argv[])
 {
     // Local variables
-    int socketNo, portNo;
+    int portNo;
     char* ipAddr;
     struct hostent *dst;
     struct sockaddr_in dst_addr;
-    char buf[8];
+    struct itimerval interval;
 
     struct sigaction newSigAction;
     memset((void *)&newSigAction, 0, sizeof(struct sigaction));
@@ -81,8 +85,6 @@ int main(int argc, char *argv[])
         fprintf(stderr, "Error opening socket");
         exit(0);
     }  
-    int tos = 56; 
-    setsockopt(socketNo, SOL_SOCKET, SO_PRIORITY, &tos, sizeof(tos));
 
     // Get the destionation  
     dst = gethostbyname(ipAddr);
@@ -112,16 +114,16 @@ int main(int argc, char *argv[])
         exit(0);
     }
 
-    alarm(THROUGHPUT_INTERVAL);
-    while(sendPkt)
-    {
-        memcpy(buf, (void*)&pl, sizeof(pl));
-        pl++;
-        write(socketNo, buf, sizeof(pl));
+    interval.it_interval.tv_sec = SEND_PERIOD_SEC;
+    interval.it_interval.tv_usec = SEND_PERIOD_USEC;
+    interval.it_value.tv_sec = SEND_PERIOD_SEC;
+    interval.it_value.tv_usec = SEND_PERIOD_USEC;
+    setitimer(ITIMER_REAL, &interval, NULL);
+
+    while(sendPkt) {
+            // Do Nothing
     }    
 
     // Return 0
     return 0;
 }
-
-
