@@ -10,7 +10,7 @@ import time
 import numpy as np
 from threading import Condition
 from collections import Counter
-from Scheduler.SchedulingAlgos import SchedulingAlgos
+from SchedulingAlgos import SchedulingAlgos
 
 current_time = lambda: int(round(time.time() * 1000))
 
@@ -30,6 +30,7 @@ class SchedulerTSSDN:
         self.switches = sw
         self.hosts = hosts
         self.flowDB = []
+        self.flowDBOptimal = []
 
         # Default configuration - SAP, 10 Slots, TT/TS Enabled with 1 attempt
         # Can be changed by invoking the interface functions
@@ -47,7 +48,9 @@ class SchedulerTSSDN:
         for (x, y) in self.edgeLinks:
             if x in self.hosts: self.hostToSwitch[x] = y       
 
-        # Prepare the scheduler and initialize the network states
+      
+    # Prepare the scheduler and initialize the network states
+    def schedulerConfigured(self):
         self.coreNetworkState = {}
         for t in self.timeSlots:
             self.coreNetworkState[t] = {}
@@ -252,6 +255,7 @@ class SchedulerTSSDN:
         
                 # Allocate the slot
                 slot = bestSlots[0][:-1]
+                ilpSpec, ilpSol = -1, -1
                 links = mandatoryLinks
 
                 # Update the network state
@@ -321,8 +325,81 @@ class SchedulerTSSDN:
         # Update the flow database
         self.flowDB.append((flow, links, slot, ilpSpec, ilpSol, schedTime, flagCoreFlow, attempt))
 
+    # Interface called when flow arrives to check the optimal solution (DEBUG function)
+    # This function only computes the optimal. It does not update the link states.
+    # !!! CAUTION !!! - Use this function only for comparison of generated schedule with optimal.
+    def scheduleFlowOptimally(self, flow):
+
+        # Timers to measure execution time
+        schedTime = -current_time()
+
+        # Initializations
+        (s, d, p) = flow
+
+        links = []
+        slot = (0, 0)
+        ilpSpec, ilpSol = -1, -1
+        attempt = 0
+
+        # Detect if the flow to be scheduled is an edge flow or a core flow
+        # Edge flow uses only edge links, while core flow uses core links as well in addition to an edge link
+        edgeDstSwitches = [self.hostToSwitch[h] for h in d]
+        edgeSrcSwitches = [self.hostToSwitch[h] for h in [s]]
+        if len(set(edgeDstSwitches + edgeSrcSwitches)) == 1: 
+            flagCoreFlow = False
+        else:
+            flagCoreFlow = True
+
+        # Get the set of mandatory links
+        mandatoryLinks = [(self.hostToSwitch[h], h) for h in d]
+        mandatoryLinks.append((s, self.hostToSwitch[s]))
+        
+        # For an edge flow the slot can be assigned directly
+        if not flagCoreFlow:
+
+            # Get the set of slots on which scheduling is to be done
+            bestSlots = self.getSlots(flow, mandatoryLinks, flagCoreFlow)   
+
+            # Slots are available
+            if len(bestSlots):
+                attempt += 1                
+        
+                # Allocate the slot
+                slot = bestSlots[0][:-1]
+                ilpSpec, ilpSol = -1, -1
+                links = mandatoryLinks
+
+        # For core flows
+        else:
+            attempt += 1
+
+            # Create the set of slots
+            slotsSet = []
+            for t in self.timeSlots:
+                for ph in range(0, p):
+                    slotsSet.append((t,ph, 0))
+
+            # Create the link state data structure for the obtained slots
+            ls = self.getLinkState(slotsSet, flow, mandatoryLinks)
+
+            # Execute the ILP's as configured
+            if (self.algo == SchedulerTSSDN.SAP):
+                (links, slot, ilpSpec, ilpSol) = self.scheduler.ShortestAvailablePath(self.topo.copy(), s, d, ls)
+            elif (self.algo == SchedulerTSSDN.MM):
+                (links, slot, ilpSpec, ilpSol) = self.scheduler.MiniMax(self.topo.copy(), s, d, ls)
+
+        schedTime += current_time()
+
+        # Update the flow database
+        self.flowDBOptimal.append((flow, links, slot, ilpSpec, ilpSol, schedTime, flagCoreFlow, attempt))
+
     # Function to get the flow database
     # Can be used to check the number of flows scheduled and the corresponding execution times
     def getFlowDatabase(self):
         return self.flowDB
+
+    # Function to get the optimal flow database
+    # Can be used to compare with actual flow database to determine sub-optimalities and false negatives
+    def getOptimalFlowDatabase(self):
+        return self.flowDBOptimal
 
