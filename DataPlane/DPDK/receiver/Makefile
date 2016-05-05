@@ -33,18 +33,27 @@ ifeq ($(RTE_SDK),)
 $(error "Please define RTE_SDK environment variable")
 endif
 
+current_dir := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
+
 # Default target, can be overridden by command line or environment
 RTE_TARGET ?= x86_64-native-linuxapp-gcc
 
 include $(RTE_SDK)/mk/rte.vars.mk
 
 # binary name
-APP = delayCalculator
+APP = receiver
+
+COMMON_DIR =  $(current_dir)/../common
+VPATH += $(COMMON_DIR)
 
 # all source are stored in SRCS-y
-SRCS-y := delayCalculator.c
+SRCS-y := receiver_app.c sender.c receiver.c common.c
 
-CFLAGS +=
+INCLUDES := -I$(COMMON_DIR)
+LDLIBS := 
+
+CFLAGS += -O3 $(INCLUDES)
+CFLAGS += -I$(SRCDIR)/../shared
 
 # workaround for a gcc bug with noreturn attribute
 # http://gcc.gnu.org/bugzilla/show_bug.cgi?id=12603
