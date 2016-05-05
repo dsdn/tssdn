@@ -19,6 +19,7 @@ import  numpy as np
 # 4 - Topology trimming
 # 5 - Slice size
 # 6 - Attempts
+# 7 - Compute optimal or not
 
 # Get the location of the dataset and parse it
 # 1 - Location of the dataset
@@ -41,11 +42,15 @@ if len(sys.argv) > 5:
     tssdn.setTimeslotSlicing(sliceSize, int(sys.argv[6]))
 else:
     sliceSize = 0
+tssdn.schedulerConfigured()
+
+# Optimality calculations
+optimalCalc = int(sys.argv[7])
 
 # Schedule all flows in the dataset
 for f in dataset.flows:
     print f, dataset.flows.index(f) + 1
-    if sliceSize > 0: tssdn.scheduleFlowOptimally(f)
+    if optimalCalc > 0: tssdn.scheduleFlowOptimally(f)
     tssdn.scheduleFlow(f)
 
 # Get the flow database and print it in a file
@@ -83,7 +88,7 @@ for i in range(0, len(flowDB)):
     coreFlow = flowDB[i][6]
     attempt = flowDB[i][7]
 
-    if sliceSize > 0:
+    if optimalCalc > 0:
         flowOpt = flowDBOpt[i][0]
         linksOpt = flowDBOpt[i][1]
         slotOpt = flowDBOpt[i][2]
@@ -94,7 +99,7 @@ for i in range(0, len(flowDB)):
         attemptOpt = flowDBOpt[i][7]
 
     print >> fLog, (flow, links, "Length-"+str(len(links)), slot, ilpSpec, ilpSol, totalTime, coreFlow, "Attempt-"+str(attempt))
-    if sliceSize > 0:
+    if optimalCalc > 0:
         print >> fLog, (flowOpt, linksOpt, "Length-"+str(len(linksOpt)), slotOpt, ilpSpecOpt, ilpSolOpt, totalTimeOpt, coreFlowOpt, "Attempt-"+str(attemptOpt))
 
     accSchedTimes.append(totalTime)
@@ -110,7 +115,7 @@ for i in range(0, len(flowDB)):
     elif (ilpSpec, ilpSol) != (-1,-1):
         numIlpFailures += 1
 
-    if sliceSize > 0:
+    if optimalCalc > 0:
         if len(links) > len(linksOpt): 
             print>>fLog, "Suboptimal\n"
             numSubOptimal += 1
@@ -126,7 +131,7 @@ for i in range(0, len(flowDB)):
         accFalseNegative.append(numFalseNegative)
 
 print>>fLog, numFlows, numEdgeFlows, numCoreFlows, numSchedEdgeFlows, numSchedCoreFlows, numIlpFailures, np.mean(accSchedTimes), np.std(accSchedTimes), max(accSchedTimes)
-if sliceSize > 0:
+if optimalCalc > 0:
     print>>fLog,"Suboptimally Routed - " + str(numSubOptimal)
     print>>fLog,[i for i in accSubOptimal]
     print>>fLog,[i for i in accFalseNegative]

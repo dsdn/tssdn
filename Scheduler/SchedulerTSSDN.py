@@ -10,7 +10,7 @@ import time
 import numpy as np
 from threading import Condition
 from collections import Counter
-from Scheduler.SchedulingAlgos import SchedulingAlgos
+from SchedulingAlgos import SchedulingAlgos
 
 current_time = lambda: int(round(time.time() * 1000))
 
@@ -48,7 +48,9 @@ class SchedulerTSSDN:
         for (x, y) in self.edgeLinks:
             if x in self.hosts: self.hostToSwitch[x] = y       
 
-        # Prepare the scheduler and initialize the network states
+      
+    # Prepare the scheduler and initialize the network states
+    def schedulerConfigured(self):
         self.coreNetworkState = {}
         for t in self.timeSlots:
             self.coreNetworkState[t] = {}
