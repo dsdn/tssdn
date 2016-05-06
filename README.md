@@ -8,8 +8,8 @@ More information about the architecture and algorithms of TSSDN is available in 
 
 # Folder Structure
 - **DataPlane**: Contains the communication interfaces that were used in the data plane \(DPDK, Sockets etc.\).
-- **Controller**: This folder contains the controller scripts for the control plane. We plan to develop TSSDN as a Ryu control module. However, this is yet to done. 
-- **Scheduler**: The crux of TSSDN is its intelligent transmission scheduling algorithms. All the implemented scheduling algorithms are available in this folder. The scheduling algorithms are basically ILP formulations specified using PuLP (a python package for handling ILP solvers).
+- **Controller**: This folder contains the controller scripts for the control plane. We plan to develop TSSDN as a Ryu control module. However, this is yet to done. (Under development)
+- **Scheduler**: The crux of TSSDN is its intelligent transmission scheduling algorithms. All the implemented scheduling algorithms are available in this folder. The scheduling algorithms are basically ILP formulations specified using PuLP (a python package for handling ILP solvers). We used CPLEX, an ILP solver from IBM, to solve these ILPs.
 
 # Required Packages
 * Python Packages (Can be installed using pip)
