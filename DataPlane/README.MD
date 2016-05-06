@@ -56,4 +56,4 @@ Parameters of the DPDK application can be configured by changing the definitions
 
 # Results
 We measured the end-to-end latencies for 10,000 samples between the a sender and a receiver using DPDK and sockets. The latency variance is shown below: 
-(https://ipvs.informatik.uni-stuttgart.de/cloud/index.php/s/ET0PLSlmnkM94Wz)
+![Latencies](https://ipvs.informatik.uni-stuttgart.de/cloud/index.php/s/ET0PLSlmnkM94Wz)
