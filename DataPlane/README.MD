@@ -22,15 +22,17 @@ This folder contains the C implementation of the communication interfaces (DPDK 
 # Running the applications
 
 - Socket Applications: 
-
+	```
 	sudo nice -adjustment=-20 ./receiver_c <port_num>
 
 	sudo nice -adjustment=-20 ./sender_c <dest_ip_addr> <dest_port_num>
-
+	```
 - DPDK Applications:
 After make, dpdk has to be run with the application as an input parameter. Running the sender_receiver app would for instance look like this when ran from the DPDK folder:
 
+	```
 	sudo nice -adjustment=-20 sender_receiver/build/app/sender_receiver -0xe -n4
+	```
 	
 where sender_receiver is the dpdk app to be ran and 0xe is the bitmask for which cores are to be used.
 
