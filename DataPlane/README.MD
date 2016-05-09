@@ -38,23 +38,22 @@ where sender_receiver is the dpdk app to be ran and 0xe is the bitmask for which
 
 Parameters of the DPDK application can be configured by changing the definitions in common/config.h
 
-- **DEBUG:**			0 means no debug messages are printed 
-
-- **SEND_PERIOD_SEC:**	The number of seconds for the sending intervall	
-- **SEND_PERIOD_USEC:** The number of microseconds for the sending intervall	
-- **SEND_PERIOD_NSEC:** The number of nanoseconds for the sending interval calculated from USEC
-
-- **NUM_SAMPLES:** 		Number of Packets to be sent
-
-- **VLAN_PKT:**   		If 1, VLAN field is added to the packet
-- **VLAN_TAG:**   		The VLAN tag ID
-- **VLAN_PRIO:**  		Priority of the VLAN tag
-- **DSCP:**       		The DSCP priority of the packet
-
-- **TX_PORT_NO:** 		Port for transmitting packets (output)
-- **RX_PORT_NO:**		Port for receiving packets (input)
-- **TX_CORE_NR:**		The CPU core the sender task should run on
-- **RX_CORE_NR:**		The CPU core the receiver task should run on
+- Time-triggered transmissions
+  - **SEND_PERIOD_SEC:** The number of seconds for the sending interval
+  - **SEND_PERIOD_USEC:** The number of microseconds for the sending interval	
+  - **SEND_PERIOD_NSEC:** The number of nanoseconds for the sending interval calculated from USEC
+- Debug Parameters
+  - **NUM_SAMPLES:** Number of Packets to be sent
+  - **DEBUG:**0 means no debug messages are printed
+- Traffic Parameters
+  - **VLAN_PKT:** If 1, VLAN field is added to the packet
+  - **VLAN_TAG:** The VLAN tag ID, only valid if VLAN_TAG is 1
+  - **VLAN_PRIO:** Priority of the VLAN tag, only valid if VLAN_TAG is 1
+  - **DSCP:** The DSCP priority of the packet
+  - **TX_PORT_NO:** Port (Interface number as interpreted by DPDK) for transmitting packets (output)
+  - **RX_PORT_NO:** Port (Interface number as interpreted by DPDK) for receiving packets (input)
+  - **TX_CORE_NR:** The CPU core the sender task should run on
+  - **RX_CORE_NR:** The CPU core the receiver task should run on
 
 # Results
 We measured the end-to-end latencies for 10,000 samples between the a sender and a receiver using DPDK and sockets. The latency variance is shown below: 
