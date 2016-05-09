@@ -11,6 +11,12 @@ More information about the architecture and algorithms of TSSDN is available in 
 - **Controller**: This folder contains the controller scripts for the control plane. We plan to develop TSSDN as a Ryu control module. However, this is yet to done. (Under development)
 - **Scheduler**: The crux of TSSDN is its intelligent transmission scheduling algorithms. All the implemented scheduling algorithms are available in this folder. The scheduling algorithms are basically ILP formulations specified using PuLP (a python package for handling ILP solvers). We used CPLEX, an ILP solver from IBM, to solve these ILPs.
 
+# Tasks
+- [x] Online scheduling algorithms for time-triggered traffic (*Shortest Available Path* & *Mini-max*).
+- [ ] Offline scheduling algorithms for time-triggered traffic (*Unconstrained Routing*, *Fixed-path Routing* & *Pathsets Routing*).
+- [ ] Scheduling for event-triggered traffic.
+- [ ] Integration with RYU, an SDN controller, so that all algorithms can be executed on the control plane.
+
 # Required Packages
 * Python Packages (Can be installed using pip)
   * Ryu
