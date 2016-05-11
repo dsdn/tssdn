@@ -103,16 +103,21 @@ class SchedulingAlgos():
         ilpSolution = -current_time()
         ilpProb.solve(CPLEX(msg=0))
         ilpSolution += current_time()
-
         slotAlloc = (0,0)
+
+        # If the ILP is feasibly solved, we extract the allocated time-slot and the path
         if ilpProb.status == 1:
             route = []
+            # For extraction of the values from the decision variables, we need an ugly hack.
+            # Instead of checking if the assigned value by CPLEX is 1, we check if it is greater than 0.5.
+            # This is because we observed that occassionally few variables were assigned real numbers (very low exponents) despite the 
+            # ILP specifying otherwise. It might be a CPLEX bug or PuLP bug. So for now we use 0.5 for our checks.
             for t in timeSlots:
-                if decVarSlots[t].varValue > 0:
+                if decVarSlots[t].varValue > 0.5:
                     slotAlloc = t
             
             for l in links:
-                if decVarLinks[l].varValue > 0:
+                if decVarLinks[l].varValue > 0.5:
                     route.append(l)
 
             return (route, slotAlloc, ilpCreation, ilpSolution)
@@ -211,16 +216,21 @@ class SchedulingAlgos():
         ilpSolution = -current_time()
         ilpProb.solve(CPLEX(msg=0))
         ilpSolution += current_time()
-
         slotAlloc = (0,0)
+
+        # If the ILP is feasibly solved, we extract the allocated time-slot and the path
         if ilpProb.status == 1:
             route = []
+            # For extraction of the values from the decision variables, we need an ugly hack.
+            # Instead of checking if the assigned value by CPLEX is 1, we check if it is greater than 0.5.
+            # This is because we observed that occassionally few variables were assigned real numbers (very low exponents) despite the 
+            # ILP specifying otherwise. It might be a CPLEX bug or PuLP bug. So for now we use 0.5 for our checks.
             for t in timeSlots:
-                if decVarSlots[t].varValue > 0:
+                if decVarSlots[t].varValue > 0.5:
                     slotAlloc = t
             
             for l in links:
-                if decVarLinks[l].varValue > 0:
+                if decVarLinks[l].varValue > 0.5:
                     route.append(l)
 
             return (route, slotAlloc, ilpCreation, ilpSolution)

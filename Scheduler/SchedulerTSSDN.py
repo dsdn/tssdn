@@ -7,10 +7,9 @@ Naresh Nayak
 '''
 
 import time
-import numpy as np
-from threading import Condition
 from collections import Counter
 from SchedulingAlgos import SchedulingAlgos
+import networkx as nx
 
 current_time = lambda: int(round(time.time() * 1000))
 
@@ -291,6 +290,7 @@ class SchedulerTSSDN:
 
                         # Update the link state if schedule is found
                         if len(links) > 1: 
+                            assert(slot in [x[0:2] for x in scheduleSlots]), "Assigned slot not choosen for scheduling - " + str(slot) + " " + str(scheduleSlots)
                             self.updateLinkState(flow, links, slot)  
                             break
 
@@ -322,8 +322,19 @@ class SchedulerTSSDN:
 
         schedTime += current_time()
 
+        # Make a "quick" check if the allocated path is a plausible one
+        # Note that this check is just to ascertain the validity of the scheduling algorithm. Hence, we do not account for this in the execution times.
+        g = nx.DiGraph(links)
+        for n in g.nodes():
+            if (n == s) or (n in d):
+                assert(g.degree(n) == 1), "Degree incorrect for host - " + str(n) + " " + str(links)
+            else:
+                assert(g.degree(n) != 1), "Degree incorrect for switch - " + str(n) + " " + str(links)
+        assert(len(list(nx.cycles.simple_cycles(g))) == 0), "Loop in the given path - " + str(links) + " " + str(list(nx.cycles.simple_cycles(g))) 
+
         # Update the flow database
         self.flowDB.append((flow, links, slot, ilpSpec, ilpSol, schedTime, flagCoreFlow, attempt))
+        return (flow, links, slot, ilpSpec, ilpSol, schedTime, flagCoreFlow, attempt)
 
     # Interface called when flow arrives to check the optimal solution (DEBUG function)
     # This function only computes the optimal. It does not update the link states.
