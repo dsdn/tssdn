@@ -317,20 +317,21 @@ class SchedulerTSSDN:
                     (links, slot, ilpSpec, ilpSol) = self.scheduler.MiniMax(self.topo.copy(), s, d, ls)
 
                 # Update the link state if schedule is found
-                if len(links): 
+                if len(links) > 1: 
                     self.updateLinkState(flow, links, slot)
 
         schedTime += current_time()
 
         # Make a "quick" check if the allocated path is a plausible one
         # Note that this check is just to ascertain the validity of the scheduling algorithm. Hence, we do not account for this in the execution times.
-        g = nx.DiGraph(links)
-        for n in g.nodes():
-            if (n == s) or (n in d):
-                assert(g.degree(n) == 1), "Degree incorrect for host - " + str(n) + " " + str(links)
-            else:
-                assert(g.degree(n) != 1), "Degree incorrect for switch - " + str(n) + " " + str(links)
-        assert(len(list(nx.cycles.simple_cycles(g))) == 0), "Loop in the given path - " + str(links) + " " + str(list(nx.cycles.simple_cycles(g))) 
+        if len(links) > 1:
+            g = nx.DiGraph(links)
+            for n in g.nodes():
+                if (n == s) or (n in d):
+                    assert(g.degree(n) == 1), "Degree incorrect for host - " + str(n) + " " + str(links)
+                else:
+                    assert(g.degree(n) != 1), "Degree incorrect for switch - " + str(n) + " " + str(links)
+            assert(len(list(nx.cycles.simple_cycles(g))) == 0), "Loop in the given path - " + str(links) + " " + str(list(nx.cycles.simple_cycles(g))) 
 
         # Update the flow database
         self.flowDB.append((flow, links, slot, ilpSpec, ilpSol, schedTime, flagCoreFlow, attempt))

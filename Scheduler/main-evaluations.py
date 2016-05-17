@@ -51,7 +51,7 @@ optimalCalc = int(sys.argv[7])
 for f in dataset.flows:
     print f, dataset.flows.index(f) + 1
     if optimalCalc > 0: tssdn.scheduleFlowOptimally(f)
-    tssdn.scheduleFlow(f)
+    print tssdn.scheduleFlow(f)
 
 # Get the flow database and print it in a file
 flowDB = tssdn.getFlowDatabase()
